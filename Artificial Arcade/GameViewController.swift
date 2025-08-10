@@ -14,31 +14,32 @@ class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Load 'GameScene.sks' as a GKScene. This provides gameplay related content
-        // including entities and graphs.
-        if let scene = GKScene(fileNamed: "GameScene") {
-            
-            // Get the SKScene from the loaded GKScene
-            if let sceneNode = scene.rootNode as! GameScene? {
-                
-                // Copy gameplay related content over to the scene
-                sceneNode.entities = scene.entities
-                sceneNode.graphs = scene.graphs
-                
-                // Set the scale mode to scale to fit the window
-                sceneNode.scaleMode = .aspectFill
-                
-                // Present the scene
-                if let view = self.view as! SKView? {
-                    view.presentScene(sceneNode)
-                    
-                    view.ignoresSiblingOrder = true
-                    
-                    view.showsFPS = true
-                    view.showsNodeCount = true
-                }
-            }
+        // Initialize user system
+        UserManager.shared.initializeUserSystem()
+        
+        // Determine which scene to show
+        let scene: SKScene
+        if UserManager.shared.currentUser == nil || !UserDefaults.standard.bool(forKey: "HasSeenLogin") {
+            // First time or no user - show login
+            scene = LoginScene(size: CGSize(width: 375, height: 667))
+            UserDefaults.standard.set(true, forKey: "HasSeenLogin")
+        } else {
+            // Existing user - go to main menu
+            scene = ArcadeMenuScene(size: CGSize(width: 375, height: 667))
         }
+        
+        scene.scaleMode = .aspectFill
+        
+        // Present the scene
+        guard let view = self.view as? SKView else {
+            print("Error: Could not cast view to SKView")
+            return
+        }
+        
+        view.presentScene(scene)
+        view.ignoresSiblingOrder = true
+        view.showsFPS = false
+        view.showsNodeCount = false
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

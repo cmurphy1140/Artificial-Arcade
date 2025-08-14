@@ -1,148 +1,141 @@
-# Artificial Arcade - AI-Powered Gaming Platform
+# 🎮 Artificial Arcade
 
-An innovative gaming platform that combines AI companions, Web3 authentication, and intelligent memory persistence to create unique, evolving gaming experiences.
+A multi-platform arcade game collection featuring AI-powered opponents and cross-platform gameplay.
 
-## Features
+## 🏗️ Project Structure
 
-- **AI Companions**: Intelligent game companions with persistent memory using pgvector
-- **Web3 Authentication**: Secure wallet-based authentication with RainbowKit
-- **Game Playground**: MCP server for game execution and state management
-- **Memory Persistence**: Vector-based memory storage and retrieval for personalized experiences
-- **Token-Gated Content**: Premium features accessible with Web3 tokens
-- **Social Features**: Achievements, leaderboards, and community interaction
+```
+Artificial Arcade/
+├── platforms/                    # Platform-specific implementations
+│   ├── ios/                     # iOS/macOS native app (Swift/SpriteKit)
+│   │   ├── ArtificialArcade.xcodeproj/
+│   │   └── ArtificialArcade/
+│   │       ├── App/             # App lifecycle (AppDelegate, GameViewController)
+│   │       ├── Scenes/          # Game scenes (SpriteKit)
+│   │       ├── Managers/        # Singletons & managers
+│   │       ├── Views/           # UI components
+│   │       ├── Resources/       # Assets, SKS files, localizations
+│   │       └── Utilities/       # Helper classes
+│   │
+│   └── web/                     # Next.js web app (React/TypeScript)
+│       ├── app/                 # App router pages
+│       ├── components/          # React components
+│       ├── lib/                 # Utilities & integrations
+│       └── public/              # Static assets
+│
+├── shared/                      # Cross-platform shared logic
+│   ├── ai/                     # AI implementations
+│   ├── game-logic/             # Core game algorithms
+│   └── types/                  # Shared type definitions
+│
+├── services/                    # Backend services
+│   └── mcp-server/             # Model Context Protocol server
+│
+└── docs/                       # Documentation
+    ├── README.md               # This file
+    ├── CLAUDE.md               # AI assistant guidelines
+    └── ORGANIZATION_PLAN.md    # Restructure documentation
+```
 
-## Tech Stack
+## 🚀 Getting Started
 
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Database**: PostgreSQL with Drizzle ORM and pgvector
-- **Authentication**: NextAuth with SIWE (Sign-In with Ethereum)
-- **Web3**: RainbowKit, Wagmi, Viem
-- **AI**: OpenAI API for embeddings and companion responses
-- **MCP**: Model Context Protocol for game execution
+### Prerequisites
 
-## Prerequisites
+- **iOS Development**: Xcode 15+ (for iOS/macOS)
+- **Web Development**: Node.js 18+ and npm
+- **AI Features**: OpenAI API key
 
-- Node.js 20+
-- PostgreSQL with pgvector extension
-- OpenAI API key
-- WalletConnect Project ID
-
-## Setup Instructions
+### Development Setup
 
 1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd "Artificial Arcade"
-```
+   ```bash
+   git clone <repository-url>
+   cd artificial-arcade
+   ```
 
 2. **Install dependencies**
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
-3. **Configure environment variables**
+3. **Web Development**
+   ```bash
+   npm run dev:web
+   ```
 
-Copy `.env.local` and fill in your actual values:
-```bash
-# Database (PostgreSQL with pgvector)
-DATABASE_URL=postgresql://user:password@localhost:5432/artificial_arcade
+4. **iOS Development**
+   - Open `platforms/ios/ArtificialArcade.xcodeproj` in Xcode
+   - Build and run
 
-# Generate secure secret: openssl rand -base64 32
-NEXTAUTH_SECRET=your-generated-secret
+5. **MCP Server Development**
+   ```bash
+   npm run dev:mcp
+   ```
 
-# Get from: https://platform.openai.com/api-keys
-OPENAI_API_KEY=your-openai-api-key
+## 🎯 Games Available
 
-# Get from: https://cloud.walletconnect.com/
-NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your-project-id
-```
+- **Tic-Tac-Toe**: Classic 3x3 grid game with AI opponent
+- **Connect Four**: Connect 4 pieces in a row with strategic AI
+- **Snake**: Classic snake game with AI-powered difficulty scaling
+- **Hangman**: Word guessing game with AI-generated hints
 
-4. **Setup PostgreSQL with pgvector**
+## 🤖 AI Features
 
-For local development:
-```sql
-CREATE DATABASE artificial_arcade;
-\c artificial_arcade;
-CREATE EXTENSION IF NOT EXISTS vector;
-```
+- Adaptive difficulty adjustment
+- Smart opponent strategies
+- Real-time game analytics
+- Player behavior learning
 
-For production, use a managed PostgreSQL service like:
-- [Neon](https://neon.tech) (recommended - serverless PostgreSQL)
-- [Supabase](https://supabase.com)
-- [Amazon RDS](https://aws.amazon.com/rds/postgresql/)
+## 🛠️ Development Commands
 
-5. **Run database migrations**
-```bash
-npm run db:generate
-npm run db:push
-```
+| Command | Description |
+|---------|-------------|
+| `npm run dev:web` | Start Next.js development server |
+| `npm run build:web` | Build web app for production |
+| `npm run dev:mcp` | Start MCP server in development |
+| `npm run lint` | Run linting checks |
+| `npm run type-check` | TypeScript type checking |
 
-6. **Start the development server**
-```bash
-npm run dev
-```
+## 📱 Platform Features
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+### iOS/macOS Native
+- SpriteKit-powered graphics
+- Native performance
+- iOS-specific UI patterns
+- GameCenter integration
 
-## Database Commands
+### Web Application
+- Cross-platform compatibility
+- Progressive Web App (PWA)
+- Real-time multiplayer (planned)
+- Web3 integration (planned)
 
-```bash
-# Generate migrations from schema
-npm run db:generate
+## 🔧 Technology Stack
 
-# Apply migrations to database
-npm run db:migrate
+### iOS/macOS
+- **Language**: Swift
+- **Framework**: SpriteKit
+- **Architecture**: MVC/MVVM
 
-# Push schema directly (development)
-npm run db:push
+### Web
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Drizzle ORM
+- **AI**: OpenAI API
 
-# Open Drizzle Studio (database GUI)
-npm run db:studio
-```
+### Backend
+- **Server**: Model Context Protocol (MCP)
+- **Runtime**: Node.js/TypeScript
 
-## MCP Server
+## 📄 License
 
-The MCP server handles game execution and state management:
+[Add your license information here]
 
-```bash
-cd mcp-server
-npm install
-npm start
-```
+## 🤝 Contributing
 
-## Project Structure
+[Add contribution guidelines here]
 
-```
-artificial-arcade/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── games/             # Game pages
-│   └── page.tsx           # Homepage
-├── components/            # React components
-│   ├── companion/         # AI companion components
-│   ├── games/             # Game-related components
-│   └── layout/            # Layout components
-├── lib/                   # Core libraries
-│   ├── ai/                # AI companion service
-│   ├── auth/              # Authentication config
-│   ├── db/                # Database schema and config
-│   └── web3/              # Web3 configuration
-├── mcp-server/            # MCP game execution server
-└── public/                # Static assets
-```
+## 📞 Support
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-For issues and questions, please open a GitHub issue or contact the maintainers.
+[Add support/contact information here]

@@ -1,0 +1,36 @@
+<!-- Placeholder SVG for Tic Tac Toe game -->
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <rect width="400" height="400" fill="url(#gradient)"/>
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Game Grid -->
+  <g stroke="#fff" stroke-width="4" fill="none">
+    <line x1="133" y1="100" x2="133" y2="300"/>
+    <line x1="267" y1="100" x2="267" y2="300"/>
+    <line x1="100" y1="133" x2="300" y2="133"/>
+    <line x1="100" y1="267" x2="300" y2="267"/>
+  </g>
+  
+  <!-- X and O -->
+  <g stroke="#fff" stroke-width="6" fill="none">
+    <!-- X in top-left -->
+    <line x1="110" y1="110" x2="123" y2="123"/>
+    <line x1="123" y1="110" x2="110" y2="123"/>
+    
+    <!-- O in center -->
+    <circle cx="200" cy="200" r="15"/>
+    
+    <!-- X in bottom-right -->
+    <line x1="277" y1="277" x2="290" y2="290"/>
+    <line x1="290" y1="277" x2="277" y2="290"/>
+  </g>
+  
+  <!-- Title -->
+  <text x="200" y="50" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">TIC TAC TOE</text>
+  <text x="200" y="370" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14">AI-Powered Strategy</text>
+</svg>

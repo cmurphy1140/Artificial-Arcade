@@ -1,38 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { CompanionService } from '@/lib/ai/companion-service-simple';
+import { CompanionService } from '@/lib/ai/companion-service';
+import { handleApiError, validateRequired, ValidationError } from '@/lib/utils/error-handler';
+import { config } from '@/lib/config/env';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Allow anonymous access if auth is not configured
+    const userId = session?.user?.email || 'anonymous';
+    if (config.auth.enabled && !session?.user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { companionId, message } = await request.json();
+    const body = await request.json();
+    const { companionId, message } = body;
 
-    if (!companionId || !message) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    // Validate required fields
+    validateRequired(body, ['companionId', 'message']);
+
+    // Additional validation
+    if (typeof message !== 'string' || message.trim().length === 0) {
+      throw new ValidationError('Message must be a non-empty string');
+    }
+
+    if (typeof companionId !== 'string' || companionId.trim().length === 0) {
+      throw new ValidationError('Companion ID must be a non-empty string');
     }
 
     const companionService = new CompanionService();
     const response = await companionService.generateResponse({
-      companionId,
-      userId: session.user.email || 'anonymous',
-      message,
+      companionId: companionId.trim(),
+      userId: userId,
+      message: message.trim(),
     });
 
-    return NextResponse.json({ response });
+    return NextResponse.json({ 
+      response,
+      timestamp: new Date().toISOString(),
+      companionId: companionId.trim(),
+    });
   } catch (error) {
-    console.error('Companion chat error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate response' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

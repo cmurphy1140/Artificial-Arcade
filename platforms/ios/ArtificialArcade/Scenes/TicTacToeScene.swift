@@ -15,6 +15,11 @@ class TicTacToeScene: SKScene {
     private var isPlayerTurn = true
     private var gameMode: GameMode = .playerVsAI
     
+    // Managers
+    private let soundManager = SoundManager.shared
+    private let hapticManager = HapticManager.shared
+    private let scoreManager = ScoreManager.shared
+    
     enum GameMode {
         case playerVsAI
         case twoPlayer
@@ -30,6 +35,7 @@ class TicTacToeScene: SKScene {
     private var cellLabels: [[SKLabelNode]] = []
     
     override func didMove(to view: SKView) {
+        soundManager.playGameStartSound()
         setupUI()
         setupBoard()
     }
@@ -133,6 +139,8 @@ class TicTacToeScene: SKScene {
         guard let nodeName = touchedNode?.name else { return }
         
         if nodeName == "back" {
+            soundManager.playButtonPress()
+            hapticManager.lightImpact()
             let scene = ArcadeMenuScene(size: self.size)
             scene.scaleMode = .aspectFill
             self.view?.presentScene(scene)
@@ -140,16 +148,22 @@ class TicTacToeScene: SKScene {
         }
         
         if nodeName == "restart" {
+            soundManager.playButtonPress()
+            hapticManager.lightImpact()
             restartGame()
             return
         }
         
         if nodeName == "gameMode" {
+            soundManager.playButtonPress()
+            hapticManager.selectionChanged()
             toggleGameMode()
             return
         }
         
         if nodeName == "difficulty" {
+            soundManager.playButtonPress()
+            hapticManager.selectionChanged()
             cycleDifficulty()
             return
         }
@@ -165,14 +179,24 @@ class TicTacToeScene: SKScene {
     }
     
     private func makeMove(row: Int, col: Int) {
-        guard board[row][col] == "" else { return }
+        guard board[row][col] == "" else { 
+            // Invalid move feedback
+            soundManager.playEffect(.error)
+            hapticManager.error()
+            return 
+        }
         
         board[row][col] = currentPlayer
         cellLabels[row][col].text = currentPlayer
         cellLabels[row][col].fontColor = currentPlayer == "X" ? ColorPalettes.TicTacToe.playerX : ColorPalettes.TicTacToe.playerO
         
-        // Add cell highlight effect
+        // Play move sound and haptic feedback
+        soundManager.playTicTacToeMove()
+        hapticManager.lightImpact()
+        
+        // Add cell highlight effect with enhanced animation
         boardNodes[row][col].fillColor = ColorPalettes.TicTacToe.cellHighlight
+        cellLabels[row][col].pulse(scale: 1.3, duration: 0.4)
         let fadeBack = SKAction.colorize(with: ColorPalettes.TicTacToe.background, colorBlendFactor: 1.0, duration: 0.5)
         boardNodes[row][col].run(fadeBack)
         
@@ -183,7 +207,19 @@ class TicTacToeScene: SKScene {
             
             // Record the result and achievements
             let playerWon = (gameMode == .playerVsAI && currentPlayer == "X") || (gameMode == .twoPlayer)
+            
+            // Play win/loss sound and haptic feedback
+            if playerWon {
+                soundManager.playEffect(.win)
+                hapticManager.success()
+                statusLabel.pulse(scale: 1.2, duration: 0.6)
+            } else {
+                soundManager.playEffect(.lose)
+                hapticManager.error()
+            }
+            
             HighScoreManager.shared.recordTicTacToeResult(playerWon: playerWon, vsAI: gameMode == .playerVsAI)
+            scoreManager.recordTicTacToeGame(won: playerWon, vsAI: gameMode == .playerVsAI, difficulty: gameMode == .playerVsAI ? AIDifficultyManager.shared.ticTacToeDifficulty : nil)
             
             if gameMode == .playerVsAI {
                 AchievementManager.shared.recordWin(
@@ -207,8 +243,13 @@ class TicTacToeScene: SKScene {
             statusLabel.text = "🤝 It's a Draw! 🤝"
             statusLabel.fontColor = ColorPalettes.TicTacToe.accent
             
+            // Play draw sound and haptic feedback
+            soundManager.playEffect(.draw)
+            hapticManager.warning()
+            
             // Record the draw
             HighScoreManager.shared.recordTicTacToeResult(playerWon: false, vsAI: gameMode == .playerVsAI)
+            scoreManager.recordTicTacToeGame(won: false, vsAI: gameMode == .playerVsAI, difficulty: gameMode == .playerVsAI ? AIDifficultyManager.shared.ticTacToeDifficulty : nil)
             UserManager.shared.addExperience(25)
         } else {
             currentPlayer = currentPlayer == "X" ? "O" : "X"

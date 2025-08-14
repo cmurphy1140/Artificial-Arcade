@@ -19,9 +19,16 @@ class ArcadeMenuScene: SKScene {
     private var profileButton: SKLabelNode!
     private var backgroundGradient: SKSpriteNode!
     
+    // Managers
+    private let soundManager = SoundManager.shared
+    private let hapticManager = HapticManager.shared
+    
     override func didMove(to view: SKView) {
         // Initialize user system if not already done
         UserManager.shared.initializeUserSystem()
+        
+        // Start menu music
+        soundManager.playMenuMusic()
         
         setupBackground()
         setupUI()
@@ -255,8 +262,10 @@ class ArcadeMenuScene: SKScene {
         
         guard let buttonName = touchedNode?.name else { return }
         
-        // Add button press effect
+        // Add button press effect and feedback
         addButtonPressEffect(to: touchedNode)
+        soundManager.playButtonPress()
+        hapticManager.lightImpact()
         
         switch buttonName {
         case "🎯 TIC-TAC-TOE":

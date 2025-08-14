@@ -10,6 +10,11 @@ const openai = new OpenAI({
 
 // Enhanced with batch processing capabilities
 export class CompanionService {
+  // Check if database is available
+  private isDatabaseAvailable(): boolean {
+    return db !== null;
+  }
+
   // Optimized embedding generation with caching potential
   async generateEmbedding(text: string): Promise<number[]> {
     const response = await openai.embeddings.create({
@@ -35,9 +40,14 @@ export class CompanionService {
     type?: string;
     importance?: number;
   }) {
+    if (!this.isDatabaseAvailable()) {
+      console.warn('Database not available, skipping memory storage');
+      return null;
+    }
+
     const embedding = await this.generateEmbedding(content);
     
-    const memory = await db.insert(memories).values({
+    const memory = await db!.insert(memories).values({
       userId,
       companionId,
       gameId,
@@ -56,18 +66,23 @@ export class CompanionService {
     companionId,
     query,
     limit = 10,
-    threshold = 0.7,
+    // threshold = 0.7, // Removed unused parameter
   }: {
     userId: string;
     companionId?: string;
     query: string;
     limit?: number;
-    threshold?: number;
+    // threshold?: number; // Removed unused parameter
   }) {
+    if (!this.isDatabaseAvailable()) {
+      console.warn('Database not available, returning empty memories');
+      return [];
+    }
+
     const queryEmbedding = await this.generateEmbedding(query);
     
     // Use pgvector to find similar memories
-    const relevantMemories = await db
+    const relevantMemories = await db!
       .select()
       .from(memories)
       .where(
@@ -90,12 +105,12 @@ export class CompanionService {
     companionId,
     userId,
     message,
-    gameContext,
+    // gameContext, // Removed unused parameter
   }: {
     companionId: string;
     userId: string;
     message: string;
-    gameContext?: Record<string, unknown>;
+    // gameContext?: Record<string, unknown>; // Removed unused parameter
   }) {
     // Get companion details
     const companion = await db

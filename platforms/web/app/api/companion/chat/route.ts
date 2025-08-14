@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { CompanionService } from '@/lib/ai/companion-service';
+import { CompanionService } from '@/lib/ai/companion-service-simple';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { companionId, message, gameContext } = await request.json();
+    const { companionId, message } = await request.json();
 
     if (!companionId || !message) {
       return NextResponse.json(
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       companionId,
       userId: session.user.email || 'anonymous',
       message,
-      gameContext,
     });
 
     return NextResponse.json({ response });

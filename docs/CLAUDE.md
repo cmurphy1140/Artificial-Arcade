@@ -131,4 +131,6 @@ and verify that recent changes and implementations adhere to all guidelines."
 - Added: Common frustrations prevention list
 
 ---
+Run and build the code after any major changes to ensure it's working. Don't just say the code is working without actually testing, building and deploying.
+
 *This file should be updated whenever new agents are added or quality standards change.*

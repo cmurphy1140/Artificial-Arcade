@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { db, memories, companions, users } from '@/lib/db';
+import { db, memories, companions } from '@/lib/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 // Optimized for batch operations and reduced tool usage
 
@@ -95,7 +95,7 @@ export class CompanionService {
     companionId: string;
     userId: string;
     message: string;
-    gameContext?: any;
+    gameContext?: Record<string, unknown>;
   }) {
     // Get companion details
     const companion = await db
@@ -182,7 +182,7 @@ export class CompanionService {
     }
 
     // Consolidate old memories
-    for (const [key, group] of memoryGroups) {
+    for (const group of memoryGroups.values()) {
       if (group.length > 100) {
         // Keep recent memories, consolidate old ones
         const toConsolidate = group.slice(50);
@@ -209,7 +209,7 @@ export class CompanionService {
   }
 
   // Summarize memories using AI
-  private async summarizeMemories(memoriesToSummarize: any[]): Promise<string> {
+  private async summarizeMemories(memoriesToSummarize: Array<{content: string}>): Promise<string> {
     const content = memoriesToSummarize
       .map(m => m.content)
       .join('\n---\n');

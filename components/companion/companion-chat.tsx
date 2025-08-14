@@ -14,7 +14,7 @@ interface CompanionChatProps {
   companionId: string;
   companionName: string;
   companionAvatar?: string;
-  gameContext?: any;
+  gameContext?: Record<string, unknown>;
 }
 
 export function CompanionChat({
@@ -88,11 +88,9 @@ export function CompanionChat({
       <div className="flex items-center gap-3 p-4 border-b border-gray-800">
         <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
           {companionAvatar ? (
-            <img
-              src={companionAvatar}
-              alt={companionName}
-              className="w-full h-full rounded-full"
-            />
+            <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+              {companionName.charAt(0)}
+            </div>
           ) : (
             <span className="text-white text-lg">🤖</span>
           )}

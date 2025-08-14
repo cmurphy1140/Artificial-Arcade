@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const companionService = new CompanionService();
     const response = await companionService.generateResponse({
       companionId,
-      userId: session.user.id,
+      userId: session.user.email || 'anonymous',
       message,
       gameContext,
     });

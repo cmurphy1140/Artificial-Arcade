@@ -62,7 +62,7 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 p-8 rounded-2xl backdrop-blur-sm">
           <h2 className="text-2xl font-bold text-white mb-4 text-center">Coming Soon</h2>
           <p className="text-gray-300 text-center max-w-2xl mx-auto">
-            We're building an amazing collection of AI-powered games. Connect your wallet to be notified when new games launch!
+            We&apos;re building an amazing collection of AI-powered games. Connect your wallet to be notified when new games launch!
           </p>
         </div>
       </section>

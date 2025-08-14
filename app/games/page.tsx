@@ -1,7 +1,7 @@
 import { Header } from '@/components/layout/header';
 import { GameCard } from '@/components/games/game-card';
 import { db, games } from '@/lib/db';
-import { eq, desc, and, like } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 export default async function GamesPage() {
   // Fetch real games from database

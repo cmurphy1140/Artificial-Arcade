@@ -1,0 +1,22 @@
+{
+  "name": "arcade-playground-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Artificial Arcade game playground",
+  "main": "playground-server.ts",
+  "scripts": {
+    "start": "tsx playground-server.ts",
+    "dev": "tsx watch playground-server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "fastmcp": "^3.14.4",
+    "drizzle-orm": "^0.44.4",
+    "@neondatabase/serverless": "^1.0.1",
+    "zod": "^4.0.17",
+    "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "@types/node": "^20.0.0"
+  }
+}

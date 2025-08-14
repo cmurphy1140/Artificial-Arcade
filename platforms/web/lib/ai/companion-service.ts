@@ -48,6 +48,8 @@ export class CompanionService {
     content,
     type = 'conversation',
     importance = 0,
+    conversationId,
+    parentMemoryId,
   }: {
     userId: string;
     companionId?: string;
@@ -55,6 +57,8 @@ export class CompanionService {
     content: string;
     type?: string;
     importance?: number;
+    conversationId?: string;
+    parentMemoryId?: string;
   }) {
     if (!this.isDatabaseAvailable()) {
       console.warn('Database not available, skipping memory storage');
@@ -66,17 +70,45 @@ export class CompanionService {
       return null;
     }
 
+    // Generate conversation ID for threaded conversations
+    let finalConversationId = conversationId;
+    if (!conversationId && parentMemoryId) {
+      const parentMemory = await db!.select().from(memories)
+        .where(eq(memories.id, parentMemoryId))
+        .limit(1);
+      if (parentMemory[0]?.conversationId) {
+        finalConversationId = parentMemory[0].conversationId;
+      }
+    } else if (!conversationId && type === 'conversation') {
+      finalConversationId = crypto.randomUUID();
+    }
+
     const embedding = await this.generateEmbedding(content);
     
     const memory = await db!.insert(memories).values({
       userId,
       companionId,
       gameId,
+      conversationId: finalConversationId,
+      parentMemoryId,
       content,
       embedding,
       type,
       importance,
+      decayRate: '0.95',
+      lastAccessedAt: new Date(),
+      accessCount: 0,
     }).returning();
+
+    // Update access count for retrieved memories
+    if (parentMemoryId) {
+      await db!.update(memories)
+        .set({
+          accessCount: sql`${memories.accessCount} + 1`,
+          lastAccessedAt: new Date(),
+        })
+        .where(eq(memories.id, parentMemoryId));
+    }
 
     return memory[0];
   }
@@ -119,7 +151,51 @@ export class CompanionService {
       )
       .limit(limit);
 
+    // Update access count and last accessed time
+    if (relevantMemories.length > 0) {
+      const memoryIds = relevantMemories.map(m => m.id);
+      await db!.update(memories)
+        .set({
+          accessCount: sql`${memories.accessCount} + 1`,
+          lastAccessedAt: new Date(),
+        })
+        .where(sql`${memories.id} = ANY(${memoryIds})`);
+    }
+
     return relevantMemories;
+  }
+
+  async getConversationHistory({
+    userId,
+    companionId,
+    conversationId,
+    limit = 20,
+  }: {
+    userId: string;
+    companionId?: string;
+    conversationId?: string;
+    limit?: number;
+  }) {
+    if (!this.isDatabaseAvailable()) {
+      return [];
+    }
+
+    const conditions = [
+      eq(memories.userId, userId),
+      eq(memories.type, 'conversation'),
+    ];
+
+    if (companionId) conditions.push(eq(memories.companionId, companionId));
+    if (conversationId) conditions.push(eq(memories.conversationId, conversationId));
+
+    const history = await db!
+      .select()
+      .from(memories)
+      .where(and(...conditions))
+      .orderBy(desc(memories.createdAt))
+      .limit(limit);
+
+    return history.reverse(); // Return in chronological order
   }
 
   async generateResponse({

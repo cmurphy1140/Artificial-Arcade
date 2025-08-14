@@ -1,22 +1,27 @@
 {
-  "name": "arcade-playground-mcp",
+  "name": "arcade-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for Artificial Arcade game playground",
-  "main": "playground-server.ts",
+  "description": "MCP server for Artificial Arcade - Companion & Memory Management",
+  "main": "companion-memory-server.ts",
   "scripts": {
-    "start": "tsx playground-server.ts",
-    "dev": "tsx watch playground-server.ts"
+    "start": "tsx companion-memory-server.ts --stdio",
+    "start:http": "tsx companion-memory-server.ts",
+    "dev": "tsx watch companion-memory-server.ts",
+    "playground": "tsx playground-server.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
-    "fastmcp": "^3.14.4",
-    "drizzle-orm": "^0.44.4",
     "@neondatabase/serverless": "^1.0.1",
-    "zod": "^4.0.17",
-    "dotenv": "^17.2.1"
+    "@types/uuid": "^10.0.0",
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.4",
+    "fastmcp": "^3.14.4",
+    "openai": "^4.90.0",
+    "uuid": "^8.3.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "tsx": "^4.7.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0"
   }
 }

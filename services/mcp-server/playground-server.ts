@@ -1,7 +1,7 @@
 import { FastMCP, McpError } from 'fastmcp';
 import { z } from 'zod';
 import vm from 'vm';
-import { db, games, gameSessions, memories } from '../lib/db';
+import { db, games, gameSessions, memories } from './db';
 import { eq } from 'drizzle-orm';
 
 // Initialize FastMCP server
@@ -20,24 +20,78 @@ interface GameContext {
 const activeGames = new Map<string, GameContext>();
 
 // Execute game action tool
-mcp.tool(
-  'executeGameAction',
-  'Execute an action in the current game',
-  {
+mcp.addTool({
+  name: 'executeGameAction',
+  description: 'Execute an action in the current game',
+  parameters: z.object({
     sessionId: z.string().describe('Game session ID'),
     action: z.string().describe('Action to execute'),
     parameters: z.record(z.any()).optional().describe('Action parameters'),
-  },
-  async ({ sessionId, action, parameters = {} }) => {
+  }),
+  execute: async function({ sessionId, action, parameters = {} }) {
     const gameContext = activeGames.get(sessionId);
     if (!gameContext) {
       throw new McpError('INVALID_SESSION', 'Game session not found');
+    }
+
+    if (!db) {
+      throw new McpError('DATABASE_ERROR', 'Database not available');
     }
 
     // Fetch game code from database
     const game = await db.select().from(games).where(eq(games.id, gameContext.gameId)).limit(1);
     if (!game.length) {
       throw new McpError('GAME_NOT_FOUND', 'Game not found');
+    }
+
+    // Get game logic from metadata or playUrl
+    const gameData = game[0];
+    let gameLogic: string;
+    
+    // Check if game has embedded logic in metadata
+    if (gameData.metadata && typeof gameData.metadata === 'object' && 'gameLogic' in gameData.metadata) {
+      gameLogic = (gameData.metadata as any).gameLogic;
+    } else {
+      // Default game engine for games without custom logic
+      // This provides a basic game framework that games can extend
+      gameLogic = `
+        // Default game engine
+        const gameState = state || {};
+        let gameScore = score || 0;
+        
+        // Process action based on game type
+        switch(action) {
+          case 'move':
+            gameState.position = parameters.direction || gameState.position || 'start';
+            gameState.moves = (gameState.moves || 0) + 1;
+            break;
+          case 'interact':
+            gameState.lastInteraction = parameters.target;
+            gameScore += parameters.points || 1;
+            break;
+          case 'collect':
+            gameState.inventory = gameState.inventory || [];
+            gameState.inventory.push(parameters.item);
+            gameScore += parameters.value || 5;
+            break;
+          case 'use':
+            if (gameState.inventory && gameState.inventory.includes(parameters.item)) {
+              gameState.inventory = gameState.inventory.filter(i => i !== parameters.item);
+              gameState.used = gameState.used || [];
+              gameState.used.push(parameters.item);
+              gameScore += 10;
+            }
+            break;
+          default:
+            // Allow custom actions to be stored
+            gameState.lastAction = action;
+            gameState.customActions = gameState.customActions || [];
+            gameState.customActions.push({ action, parameters, timestamp: Date.now() });
+        }
+        
+        // Return updated state
+        ({ state: gameState, score: gameScore, message: 'Action: ' + action + ' processed' })
+      `;
     }
 
     // Create sandbox for game execution
@@ -56,21 +110,7 @@ mcp.tool(
 
     try {
       // Execute game logic in sandbox
-      const script = new vm.Script(`
-        // Game logic would be loaded from database
-        // This is a simple example
-        if (action === 'move') {
-          state.position = parameters.direction || 'north';
-          score += 10;
-        } else if (action === 'collect') {
-          state.inventory = state.inventory || [];
-          state.inventory.push(parameters.item);
-          score += parameters.value || 5;
-        }
-        
-        ({ state, score, message: 'Action executed: ' + action })
-      `);
-      
+      const script = new vm.Script(gameLogic);
       const context = vm.createContext(sandbox);
       const result = script.runInContext(context);
       
@@ -89,18 +129,22 @@ mcp.tool(
       throw new McpError('EXECUTION_ERROR', `Game execution failed: ${error}`);
     }
   }
-);
+});
 
 // Start game session tool
-mcp.tool(
-  'startGameSession',
-  'Start a new game session',
-  {
+mcp.addTool({
+  name: 'startGameSession',
+  description: 'Start a new game session',
+  parameters: z.object({
     gameId: z.string().describe('Game ID'),
     userId: z.string().describe('User ID'),
     companionId: z.string().optional().describe('AI Companion ID'),
-  },
-  async ({ gameId, userId, companionId }) => {
+  }),
+  execute: async function({ gameId, userId, companionId }) {
+    if (!db) {
+      throw new McpError('DATABASE_ERROR', 'Database not available');
+    }
+
     // Create session in database
     const session = await db.insert(gameSessions).values({
       gameId,
@@ -126,19 +170,23 @@ mcp.tool(
       message: 'Game session started',
     };
   }
-);
+});
 
 // End game session tool
-mcp.tool(
-  'endGameSession',
-  'End the current game session',
-  {
+mcp.addTool({
+  name: 'endGameSession',
+  description: 'End the current game session',
+  parameters: z.object({
     sessionId: z.string().describe('Game session ID'),
-  },
-  async ({ sessionId }) => {
+  }),
+  execute: async function({ sessionId }) {
     const gameContext = activeGames.get(sessionId);
     if (!gameContext) {
       throw new McpError('INVALID_SESSION', 'Game session not found');
+    }
+
+    if (!db) {
+      throw new McpError('DATABASE_ERROR', 'Database not available');
     }
 
     // Update session in database
@@ -159,16 +207,16 @@ mcp.tool(
       message: 'Game session ended',
     };
   }
-);
+});
 
 // Get game state tool
-mcp.tool(
-  'getGameState',
-  'Get the current game state',
-  {
+mcp.addTool({
+  name: 'getGameState',
+  description: 'Get the current game state',
+  parameters: z.object({
     sessionId: z.string().describe('Game session ID'),
-  },
-  async ({ sessionId }) => {
+  }),
+  execute: async function({ sessionId }) {
     const gameContext = activeGames.get(sessionId);
     if (!gameContext) {
       throw new McpError('INVALID_SESSION', 'Game session not found');
@@ -180,20 +228,24 @@ mcp.tool(
       actions: gameContext.actions,
     };
   }
-);
+});
 
 // Save game checkpoint tool
-mcp.tool(
-  'saveCheckpoint',
-  'Save a checkpoint in the current game',
-  {
+mcp.addTool({
+  name: 'saveCheckpoint',
+  description: 'Save a checkpoint in the current game',
+  parameters: z.object({
     sessionId: z.string().describe('Game session ID'),
     checkpointName: z.string().describe('Name for the checkpoint'),
-  },
-  async ({ sessionId, checkpointName }) => {
+  }),
+  execute: async function({ sessionId, checkpointName }) {
     const gameContext = activeGames.get(sessionId);
     if (!gameContext) {
       throw new McpError('INVALID_SESSION', 'Game session not found');
+    }
+
+    if (!db) {
+      throw new McpError('DATABASE_ERROR', 'Database not available');
     }
 
     // Save checkpoint as memory
@@ -214,20 +266,24 @@ mcp.tool(
       message: `Checkpoint '${checkpointName}' saved`,
     };
   }
-);
+});
 
 // Load game checkpoint tool
-mcp.tool(
-  'loadCheckpoint',
-  'Load a previously saved checkpoint',
-  {
+mcp.addTool({
+  name: 'loadCheckpoint',
+  description: 'Load a previously saved checkpoint',
+  parameters: z.object({
     sessionId: z.string().describe('Game session ID'),
     checkpointName: z.string().describe('Name of the checkpoint to load'),
-  },
-  async ({ sessionId, checkpointName }) => {
+  }),
+  execute: async function({ sessionId, checkpointName }) {
     const gameContext = activeGames.get(sessionId);
     if (!gameContext) {
       throw new McpError('INVALID_SESSION', 'Game session not found');
+    }
+
+    if (!db) {
+      throw new McpError('DATABASE_ERROR', 'Database not available');
     }
 
     // Find checkpoint in memories
@@ -254,13 +310,19 @@ mcp.tool(
       score: checkpointData.score,
     };
   }
-);
+});
 
 // Resources
-mcp.resource(
-  'game-library',
-  'Available games in the arcade',
-  async () => {
+mcp.addResource({
+  name: 'game-library',
+  description: 'Available games in the arcade',
+  uri: 'game-library',
+  mimeType: 'application/json',
+  read: async function() {
+    if (!db) {
+      return JSON.stringify({ error: 'Database not available' }, null, 2);
+    }
+
     const availableGames = await db.select({
       id: games.id,
       title: games.title,
@@ -271,12 +333,14 @@ mcp.resource(
 
     return JSON.stringify(availableGames, null, 2);
   }
-);
+});
 
-mcp.resource(
-  'active-sessions',
-  'Currently active game sessions',
-  async () => {
+mcp.addResource({
+  name: 'active-sessions',
+  description: 'Currently active game sessions',
+  uri: 'active-sessions',
+  mimeType: 'application/json',
+  read: async function() {
     const sessions = Array.from(activeGames.entries()).map(([id, context]) => ({
       sessionId: id,
       gameId: context.gameId,
@@ -287,13 +351,17 @@ mcp.resource(
 
     return JSON.stringify(sessions, null, 2);
   }
-);
+});
 
 // Prompts
-mcp.prompt(
-  'game-assistant',
-  'Act as a helpful game assistant for the player',
-  async ({ gameId, difficulty = 'medium' }) => {
+mcp.addPrompt({
+  name: 'game-assistant',
+  description: 'Act as a helpful game assistant for the player',
+  arguments: [
+    { name: 'gameId', description: 'Game ID' },
+    { name: 'difficulty', description: 'Difficulty level', default: 'medium' }
+  ],
+  resolve: async function({ gameId, difficulty = 'medium' }) {
     return `You are an AI game assistant for Artificial Arcade. Help the player with:
     
 1. Understanding game mechanics
@@ -304,12 +372,15 @@ mcp.prompt(
 
 Be encouraging and adaptive to their skill level. Game ID: ${gameId}`;
   }
-);
+});
 
-mcp.prompt(
-  'game-narrator',
-  'Narrate the game story and events',
-  async ({ genre = 'adventure' }) => {
+mcp.addPrompt({
+  name: 'game-narrator',
+  description: 'Narrate the game story and events',
+  arguments: [
+    { name: 'genre', description: 'Game genre', default: 'adventure' }
+  ],
+  resolve: async function({ genre = 'adventure' }) {
     return `You are a dynamic game narrator for ${genre} games. Your role:
     
 1. Create immersive descriptions of game environments
@@ -320,7 +391,7 @@ mcp.prompt(
 
 Keep narration concise but impactful.`;
   }
-);
+});
 
 // Start the server
 const PORT = process.env.MCP_PORT || 4000;

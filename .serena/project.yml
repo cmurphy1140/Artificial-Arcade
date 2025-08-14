@@ -1,0 +1,102 @@
+# Serena Project Configuration for Artificial Arcade
+name: artificial-arcade
+description: AI-powered arcade platform with Web3 integration, companion system, and MCP server
+
+# Project-specific configuration
+file_system_allowed: true
+shell_execution_allowed: true
+
+# Primary language for the project
+language: typescript
+
+# Project structure hints for better semantic understanding
+project_structure:
+  main_directories:
+    - platforms/web  # Next.js web application
+    - platforms/ios  # iOS Swift application
+    - services/mcp-server  # MCP server for companion and memory
+    - shared  # Shared modules across platforms
+  
+  key_files:
+    - platforms/web/package.json
+    - platforms/web/tsconfig.json
+    - services/mcp-server/companion-memory-server.ts
+    - shared/ai/index.ts
+    - shared/game-logic/index.ts
+
+# Memory tags for organizing project knowledge
+memory_tags:
+  - architecture
+  - companion-system
+  - mcp-integration
+  - web3-wallet
+  - game-logic
+  - ai-difficulty
+  - database-schema
+
+# Excluded directories (to avoid processing unnecessary files)
+excluded_paths:
+  - node_modules
+  - .next
+  - .git
+  - dist
+  - build
+  - coverage
+  - "*.log"
+
+# Custom tool configurations
+tools:
+  # Enable all standard tools
+  enabled_tools:
+    - read_file
+    - create_text_file
+    - list_dir
+    - find_file
+    - replace_regex
+    - search_for_pattern
+    - get_symbols_overview
+    - find_symbol
+    - find_referencing_symbols
+    - replace_symbol_body
+    - insert_after_symbol
+    - insert_before_symbol
+    - write_memory
+    - read_memory
+    - list_memories
+    - execute_shell_command
+    - activate_project
+  
+  # Tool-specific settings
+  execute_shell_command:
+    allowed_commands:
+      - npm
+      - pnpm
+      - yarn
+      - tsx
+      - node
+      - git
+      - ls
+      - cat
+      - grep
+      - find
+    working_directory: /Users/connormurphy/Desktop/Artificial Arcade
+
+# Integration points with the existing MCP server
+mcp_integration:
+  server_path: services/mcp-server/companion-memory-server.ts
+  playground_path: services/mcp-server/playground-server.ts
+  database_schema: services/mcp-server/db/schema.ts
+  
+# Development workflow hints
+workflow:
+  test_command: "cd platforms/web && npm test"
+  build_command: "cd platforms/web && npm run build"
+  dev_command: "cd platforms/web && npm run dev"
+  mcp_server_command: "cd services/mcp-server && npm start"
+  
+# Code style preferences (for edits)
+code_style:
+  indent: 2
+  use_semicolons: true
+  quotes: double
+  typescript_strict: true

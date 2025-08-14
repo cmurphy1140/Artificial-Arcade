@@ -356,6 +356,7 @@ class LoginScene: SKScene {
                 y: CGFloat.random(in: 0...frame.height)
             )
             particle.zPosition = -1
+            particle.name = "particle" // Add name for counting
             
             let floatAction = SKAction.sequence([
                 SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -20...20), duration: 4.0),
@@ -366,12 +367,23 @@ class LoginScene: SKScene {
             addChild(particle)
         }
         
-        // Schedule next particle burst
+        // Schedule next particle burst - FIXED: Only one scheduling, not exponential
         let delay = SKAction.wait(forDuration: Double.random(in: 3.0...6.0))
         let spawn = SKAction.run { [weak self] in
-            self?.createParticleEffect()
+            // Limit total particles on screen
+            let particleCount = self?.children.filter { $0.name == "particle" }.count ?? 0
+            if particleCount < 20 {  // Maximum 20 particles for login scene
+                self?.createParticleEffect()
+            } else {
+                // Reschedule when count drops
+                self?.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 2.0),
+                    SKAction.run { self?.createParticleEffect() }
+                ]), withKey: "particleRespawn")
+            }
         }
-        run(SKAction.sequence([delay, spawn]))
+        // Use a key to prevent duplicate scheduling
+        run(SKAction.sequence([delay, spawn]), withKey: "particleSpawn")
     }
     
     private func addGlowEffects() {

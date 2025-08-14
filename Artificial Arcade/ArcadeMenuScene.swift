@@ -206,6 +206,7 @@ class ArcadeMenuScene: SKScene {
                 y: CGFloat.random(in: 0...frame.height)
             )
             particle.zPosition = -0.5
+            particle.name = "particle" // Add name for counting
             
             let floatAction = SKAction.sequence([
                 SKAction.moveBy(x: CGFloat.random(in: -50...50), y: CGFloat.random(in: -30...30), duration: 3.0),
@@ -215,14 +216,25 @@ class ArcadeMenuScene: SKScene {
             
             particle.run(floatAction)
             addChild(particle)
-            
-            // Continuously spawn new particles
-            let spawnDelay = SKAction.wait(forDuration: Double.random(in: 2.0...5.0))
-            let spawnAction = SKAction.run { [weak self] in
-                self?.createParticleEffect()
-            }
-            run(SKAction.sequence([spawnDelay, spawnAction]))
         }
+        
+        // Schedule ONLY ONE call for the next batch (not per particle!)
+        let spawnDelay = SKAction.wait(forDuration: Double.random(in: 3.0...5.0))
+        let spawnAction = SKAction.run { [weak self] in
+            // Limit total particles on screen to prevent excessive spawning
+            let particleCount = self?.children.filter { $0.name == "particle" }.count ?? 0
+            if particleCount < 30 {  // Maximum 30 particles on screen
+                self?.createParticleEffect()
+            } else {
+                // Reschedule check when particles are below limit
+                self?.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 2.0),
+                    SKAction.run { self?.createParticleEffect() }
+                ]), withKey: "particleRespawn")
+            }
+        }
+        // Use a key to prevent duplicate scheduling
+        run(SKAction.sequence([spawnDelay, spawnAction]), withKey: "particleSpawn")
     }
     
     private func addGlowEffects() {
